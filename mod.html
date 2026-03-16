@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MODERATOR PANEL | ASR EXROT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Plus+Jakarta+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #070217; color: white; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .tab-content { display: none; }
+        .tab-active { display: block; }
+        .nav-btn.active { background: rgba(139, 92, 246, 0.2); color: #a78bfa; border-left: 3px solid #a78bfa; }
+        .copy-hover:hover { color: #a78bfa; cursor: pointer; text-decoration: underline; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <div id="loginOverlay" class="fixed inset-0 z-[100] bg-[#070217] flex items-center justify-center p-6">
+        <div class="w-full max-w-sm glass p-10 rounded-[3rem] text-center border-purple-500/20">
+            <h1 style="font-family: 'Orbitron', sans-serif;" class="text-xl font-black mb-8 text-purple-500 italic uppercase">Mod Access</h1>
+            <div class="space-y-4">
+                <input id="mEmail" type="email" placeholder="Moderator Email" class="w-full bg-white/5 p-4 rounded-2xl outline-none border border-white/10 focus:border-purple-500 text-sm">
+                <input id="mPass" type="password" placeholder="Password" class="w-full bg-white/5 p-4 rounded-2xl outline-none border border-white/10 focus:border-purple-500 text-sm">
+                <button onclick="attemptLogin()" class="w-full bg-purple-600 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-purple-500/20">Login to Hub</button>
+            </div>
+            <p id="loginError" class="text-red-500 text-[10px] mt-4 font-bold uppercase hidden">Access Denied!</p>
+        </div>
+    </div>
+
+    <div id="modContent" class="hidden flex min-h-screen">
+        <aside class="w-64 glass border-r border-white/5 hidden md:flex flex-col sticky top-0 h-screen">
+            <div class="p-8 text-purple-500 font-black italic uppercase text-lg">ASR Mod</div>
+            <nav class="flex-1 px-4 space-y-2">
+                <button onclick="switchTab('review')" id="btn-review" class="nav-btn active w-full text-left p-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition"><i class="fas fa-check-circle mr-2"></i> ID Review</button>
+                <button onclick="switchTab('links')" id="btn-links" class="nav-btn w-full text-left p-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition"><i class="fas fa-link mr-2"></i> Task & Notice</button>
+                <button onclick="switchTab('users')" id="btn-users" class="nav-btn w-full text-left p-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition"><i class="fas fa-users mr-2"></i> User List</button>
+            </nav>
+            <div class="p-6 opacity-30 text-[8px] font-black uppercase text-center">Protected by Admin Hub</div>
+        </aside>
+
+        <main class="flex-1 p-6 md:p-12">
+            
+            <div id="review-sec" class="tab-content tab-active">
+                <h2 class="text-2xl font-black mb-8 uppercase italic">Pending Reviews <span id="pCount" class="text-purple-500 ml-2">0</span></h2>
+                <div class="glass rounded-[2.5rem] overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-white/5 text-[9px] font-black uppercase text-gray-400">
+                            <tr><th class="p-6">User</th><th class="p-6">Details (Click to Copy)</th><th class="p-6">Cookies</th><th class="p-6 text-right">Action</th></tr>
+                        </thead>
+                        <tbody id="taskList" class="divide-y divide-white/5 text-xs"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="links-sec" class="tab-content">
+                <h2 class="text-2xl font-black mb-8 uppercase italic">Task Control</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="glass p-8 rounded-[3rem] border-purple-500/10">
+                        <h3 class="text-[10px] font-black uppercase opacity-40 mb-4">Set Active Task Link</h3>
+                        <div class="space-y-4">
+                            <input id="linkTitle" type="text" placeholder="Title (e.g. Task 01)" class="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-xs">
+                            <input id="linkURL" type="text" placeholder="https://..." class="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-xs font-mono">
+                            <button onclick="updateLink()" class="w-full bg-purple-600 py-4 rounded-2xl font-black text-[10px] uppercase">Activate Link</button>
+                        </div>
+                    </div>
+                    <div class="glass p-8 rounded-[3rem] border-purple-500/10">
+                        <h3 class="text-[10px] font-black uppercase opacity-40 mb-4">System Notice</h3>
+                        <div class="space-y-4">
+                            <textarea id="noticeMsg" rows="4" class="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-xs" placeholder="Write notice here..."></textarea>
+                            <button onclick="updateNotice()" class="w-full bg-white/10 py-4 rounded-2xl font-black text-[10px] uppercase">Update Notice</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="users-sec" class="tab-content">
+                <h2 class="text-2xl font-black mb-8 uppercase italic">User Activity</h2>
+                <div class="glass rounded-[2.5rem] overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-white/5 text-[9px] font-black uppercase text-gray-400">
+                            <tr><th class="p-6">Email</th><th class="p-6">Balance</th><th class="p-6">Today</th><th class="p-6 text-right">Badge</th></tr>
+                        </thead>
+                        <tbody id="userList" class="divide-y divide-white/5 text-xs"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBGv4i-NQ_tGPCBMgX-c5rGHIYee9AD_9c",
+            authDomain: "asr-exrot-b1a05.firebaseapp.com",
+            databaseURL: "https://asr-exrot-b1a05-default-rtdb.firebaseio.com",
+            projectId: "asr-exrot-b1a05",
+            storageBucket: "asr-exrot-b1a05.firebasestorage.app",
+            messagingSenderId: "1072051243593",
+            appId: "1:1072051243593:web:51df71cb1ec70a52234d98"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // --- GLOBAL COPY FUNCTION ---
+        window.copyData = (text) => {
+            navigator.clipboard.writeText(text);
+            alert("Copied: " + text);
+        };
+
+        // --- LOGIN LOGIC ---
+        window.attemptLogin = async () => {
+            const email = document.getElementById('mEmail').value;
+            const pass = document.getElementById('mPass').value;
+            const error = document.getElementById('loginError');
+            
+            const snap = await get(ref(db, 'admin/moderators'));
+            let auth = false;
+            
+            snap.forEach(child => {
+                if(child.val().email === email && child.val().pass === pass) auth = true;
+            });
+
+            if(auth) {
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('modContent').classList.remove('hidden');
+            } else {
+                error.classList.remove('hidden');
+                setTimeout(() => error.classList.add('hidden'), 2000);
+            }
+        };
+
+        // --- SUBMISSIONS DATA (WITH ONE-TAP COPY) ---
+        onValue(ref(db, 'submissions'), (snap) => {
+            const list = document.getElementById('taskList');
+            let p = 0; list.innerHTML = "";
+            snap.forEach(child => {
+                const t = child.val();
+                if(t.status === "Pending") {
+                    p++;
+                    list.innerHTML += `<tr class="hover:bg-white/[0.02]">
+                        <td class="p-6 font-bold text-gray-400">${t.email}</td>
+                        <td class="p-6 text-[10px] font-mono italic space-y-1">
+                            <div class="copy-hover" onclick="copyData('${t.username}')">U: ${t.username}</div>
+                            <div class="copy-hover" onclick="copyData('${t.password}')">P: ${t.password}</div>
+                        </td>
+                        <td class="p-6">
+                            <button onclick="copyData('${t.cookies}')" class="text-purple-400 text-[10px] font-black border-b border-purple-500/30">COPY COOKIES</button>
+                        </td>
+                        <td class="p-6 text-right space-x-3 font-black uppercase text-[10px]">
+                            <button onclick="actID('${child.key}', '${t.uid}', 'Success', ${t.price})" class="text-green-500">Approve</button>
+                            <button onclick="actID('${child.key}', '${t.uid}', 'Rejected', 0)" class="text-red-500">Reject</button>
+                        </td>
+                    </tr>`;
+                }
+            });
+            document.getElementById('pCount').innerText = p;
+        });
+
+        // --- ACTIONS ---
+        window.actID = async (tid, uid, status, price) => {
+            await update(ref(db, `submissions/${tid}`), { status });
+            if(status === 'Success') {
+                const uSnap = await get(ref(db, `users/${uid}`));
+                const uData = uSnap.val() || {};
+                await update(ref(db, `users/${uid}`), { 
+                    balance: (uData.balance || 0) + price, 
+                    today: (uData.today || 0) + 1 
+                });
+            }
+            alert("Action Saved!");
+        };
+
+        // --- TOGGLE VERIFY BADGE ---
+        window.toggleVerify = async (uid, currentStatus) => {
+            await update(ref(db, `users/${uid}`), { verified: !currentStatus });
+            alert(!currentStatus ? "Verified!" : "Unverified!");
+        };
+
+        // --- ADMIN SETTINGS ---
+        window.updateLink = () => {
+            const title = document.getElementById('linkTitle').value;
+            const url = document.getElementById('linkURL').value;
+            update(ref(db, 'admin/settings'), { redirect_url: url, active_title: title }).then(() => alert("Link Live!"));
+        };
+
+        window.updateNotice = () => {
+            const n = document.getElementById('noticeMsg').value;
+            update(ref(db, 'admin/settings'), { notice: n }).then(() => alert("Notice Updated!"));
+        };
+
+        // --- USER LIST DATA ---
+        onValue(ref(db, 'users'), (snap) => {
+            const list = document.getElementById('userList'); list.innerHTML = "";
+            snap.forEach(child => {
+                const u = child.val();
+                const uid = child.key;
+                const isVerified = u.verified || false;
+                list.innerHTML += `<tr class="hover:bg-white/[0.01]">
+                    <td class="p-6 flex items-center gap-2">
+                        ${u.email} ${isVerified ? '<i class="fas fa-check-circle text-blue-500 text-[10px]"></i>' : ''}
+                    </td>
+                    <td class="p-6 text-green-400 font-black">${(u.balance || 0).toFixed(2)} TK</td>
+                    <td class="p-6 opacity-50">${u.today || 0} IDs</td>
+                    <td class="p-6 text-right">
+                        <button onclick="toggleVerify('${uid}', ${isVerified})" class="text-[9px] font-black uppercase px-3 py-1 rounded-lg border ${isVerified ? 'border-blue-500 text-blue-400' : 'border-white/10 text-white/40'}">
+                            ${isVerified ? 'Remove Badge' : 'Add Badge'}
+                        </button>
+                    </td>
+                </tr>`;
+            });
+        });
+    </script>
+
+    <script>
+        function switchTab(t) {
+            document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('tab-active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(t + '-sec').classList.add('tab-active');
+            document.getElementById('btn-' + t).classList.add('active');
+        }
+    </script>
+</body>
+</html>
